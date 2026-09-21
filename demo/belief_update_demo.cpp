@@ -17,6 +17,7 @@
 #include "belief_update/core/bayes.hpp"
 #include "belief_update/replay/replay.hpp"
 #include "belief_update/stress/stress.hpp"
+#include "belief_update/tree.hpp"
 #include "belief_update/types.hpp"
 #include "belief_update/update/update.hpp"
 
@@ -40,6 +41,13 @@ struct BenchmarkResult {
       Provenance{source_type, SourceId{std::move(source_id)},
                  SourceVersion{"demo-v1"}, ProvenanceTimestamp{1'000}, 0.95,
                  override_status}};
+}
+
+[[nodiscard]] belief_update::Provenance make_tree_provenance() {
+  using namespace belief_update;
+  return Provenance{SourceType::model, SourceId{"transport-model"},
+                    SourceVersion{"demo-v1"}, ProvenanceTimestamp{1'000}, 0.95,
+                    OverrideStatus::not_requested};
 }
 
 [[nodiscard]] double unchecked_formula(double prior, double p_e_given_h,
@@ -142,6 +150,15 @@ int main(int argument_count, char* arguments[]) {
         result, RelativeStressRanges{10.0, 10.0, 10.0}, 0.7);
     const BayesCalculation log_odds =
         log_odds_update(BeliefState{0.4}, std::log(0.8 / 0.2));
+    const HypothesisTree tree{
+        {std::nullopt, HypothesisId{0}, HypothesisId{0}, HypothesisId{2},
+         HypothesisId{2}}};
+    const TreeBeliefState tree_prior{tree, {0.5, 0.2, 0.3}, 1e-12};
+    const TreeLikelihoodValues tree_likelihoods{{0.1, 0.8, 0.4}};
+    const Provenance tree_provenance = make_tree_provenance();
+    const TreeUpdateResult tree_result =
+        update_tree(tree_prior, tree_likelihoods, tree_provenance);
+    const TreeUpdateResult replayed_tree = replay(tree_result);
 
     std::cout << std::setprecision(9);
     std::cout << "BBUS C++ capability demo\n"
@@ -171,7 +188,22 @@ int main(int argument_count, char* arguments[]) {
               << "  stress maximum posterior: "
               << stress.maximum_posterior_scenario().posterior() << '\n'
               << "  original unchanged:       "
-              << (result.posterior() == calculation.posterior()) << "\n\n";
+              << (result.posterior() == calculation.posterior()) << '\n'
+              << "  tree car posterior:       "
+              << tree_result.posterior().probability(HypothesisId{1}) << '\n'
+              << "  tree public transit:      "
+              << tree_result.posterior().probability(HypothesisId{2}) << '\n'
+              << "  tree bus posterior:       "
+              << tree_result.posterior().probability(HypothesisId{3}) << '\n'
+              << "  tree train posterior:     "
+              << tree_result.posterior().probability(HypothesisId{4}) << '\n'
+              << "  tree replay identical:    "
+              << std::equal(
+                     replayed_tree.posterior().node_probabilities().begin(),
+                     replayed_tree.posterior().node_probabilities().end(),
+                     tree_result.posterior().node_probabilities().begin(),
+                     tree_result.posterior().node_probabilities().end())
+              << "\n\n";
 
     volatile double benchmark_prior = 0.4;
     const BeliefState core_prior{0.4};
@@ -188,12 +220,20 @@ int main(int argument_count, char* arguments[]) {
         "bbus_cpp_audited_update", iterations, [&benchmark_prior] {
           return update(benchmark_prior, 0.8, 0.2).posterior();
         });
+    const BenchmarkResult tree_result_benchmark = benchmark(
+        "bbus_cpp_tree_update", iterations,
+        [&tree_prior, &tree_likelihoods, &tree_provenance] {
+          return update_tree(tree_prior, tree_likelihoods, tree_provenance)
+              .posterior()
+              .probability(HypothesisId{2});
+        });
 
     std::cout << "Median of 7 trials (" << iterations
               << " updates per trial; lower is better)\n";
     print_benchmark(formula_result, iterations);
     print_benchmark(core_result, iterations);
     print_benchmark(pipeline_result, iterations);
+    print_benchmark(tree_result_benchmark, iterations);
     std::cout << "\nThe unchecked formula is a latency floor, not a safe or "
                  "auditable replacement.\n";
   } catch (const std::exception& exception) {

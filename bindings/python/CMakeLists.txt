@@ -10,6 +10,7 @@ pybind11_add_module(
   result_bindings.cpp
   replay_bindings.cpp
   stress_bindings.cpp
+  tree_bindings.cpp
   update_bindings.cpp
   validation_bindings.cpp
   value_bindings.cpp
@@ -25,6 +26,7 @@ target_link_libraries(
     belief_update::replay
     belief_update::resolver
     belief_update::stress
+    belief_update::tree
     belief_update::update
 )
 belief_update_apply_project_options(_belief_update)

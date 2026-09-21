@@ -28,11 +28,12 @@ Audit / Replay / Stress Testing
 ```
 
 The current repository contains invariant-checked domain value objects, the
-minimal binary Bayesian core, deterministic validation, and precedence-only
-input resolution. It also defines a likelihood-model interface but contains no
-production inference implementation. It does not yet contain input adapters,
-or audit serialization. Timestamps are always supplied by callers; validation
-never reads a clock or introduces an implicit value.
+minimal binary Bayesian core, an exact categorical hypothesis-tree core,
+deterministic validation, and precedence-only binary input resolution. It also
+defines a binary likelihood-model interface but contains no production
+inference implementation. It does not yet contain input adapters or audit
+serialization. Timestamps are always supplied by callers; validation never
+reads a clock or introduces an implicit value.
 
 Validation is observational: it returns a typed accept, warn, or reject result
 and never changes likelihoods, provenance, or confidence. Resolution refers to
@@ -42,6 +43,22 @@ selection O(1) and allocation-free on the normal path.
 Model inference is outside the Bayesian core. The model and core targets depend
 independently on the type layer, so the core receives only resolved scalar
 likelihoods and cannot observe their source or optional model metadata.
+
+The tree target is additive and does not change the binary dependency path. It
+accepts a validated parent-before-child topology, joint priors for its leaves,
+a resolved likelihood for each leaf, and typed provenance:
+
+```text
+validate topology/prior/likelihoods/provenance
+    -> exact categorical leaf update
+    -> aggregate descendant leaves
+    -> immutable TreeUpdateResult
+```
+
+Tree labels, model inference, serialization, and domain interpretation remain
+outside this target. Update cost is O(nodes + leaves). Variable-sized immutable
+inputs, intermediates, and results use owned contiguous vectors; no recursive
+traversal, virtual dispatch, logging, or formatting occurs in the update.
 
 The convenience update overloads remain orchestration code. They have a fixed
 contract—exact binary update and no freshness rule—and then enter the same

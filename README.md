@@ -3,9 +3,9 @@
 A deterministic, auditable, and stress-testable Bayesian belief-update library
 for real-time systems.
 
-This is not a general probabilistic-programming framework. It implements a
-small binary Bayesian update pipeline with explicit inputs, typed provenance,
-deterministic replay, focused analysis, and thin Python bindings.
+This is not a general probabilistic-programming framework. It implements exact
+binary updates and exact categorical updates over a hypothesis tree, with typed
+provenance, deterministic replay, focused analysis, and thin Python bindings.
 
 ## Workflow
 
@@ -74,9 +74,54 @@ result = belief_update.update(prior=0.4, likelihood_model=model)
 ```
 
 The scalar form records deterministic direct-input provenance: source type
-`direct_input`, source id `belief_update.direct`, version `0.0.3`, timestamp
+`direct_input`, source id `belief_update.direct`, version `0.1.0`, timestamp
 zero, confidence `1.0`, and override status `applied`. The model form preserves
 the model output and uses its provenance timestamp as the evaluation time.
+
+## Hypothesis trees
+
+Version `0.1.0` adds an exact categorical tree without changing the binary API.
+Node IDs are their positions, node zero is the root, and every parent precedes
+its children. Priors and likelihoods correspond to `tree.leaf_ids` in ascending
+node order:
+
+```python
+tree = belief_update.HypothesisTree(
+    parents=[
+        None,                          # 0: transport
+        belief_update.HypothesisId(0), # 1: car
+        belief_update.HypothesisId(0), # 2: public transport
+        belief_update.HypothesisId(2), # 3: bus
+        belief_update.HypothesisId(2), # 4: train
+    ]
+)
+prior = belief_update.TreeBeliefState(
+    tree=tree,
+    leaf_probabilities=[0.5, 0.2, 0.3], # car, bus, train
+    probability_sum_tolerance=1e-12,
+)
+likelihoods = belief_update.TreeLikelihoodValues(
+    evidence_given_leaves=[0.1, 0.8, 0.4]
+)
+provenance = belief_update.Provenance(
+    source_type=belief_update.SourceType.model,
+    source_id=belief_update.SourceId("transport-model"),
+    version=belief_update.SourceVersion("1"),
+    timestamp=belief_update.ProvenanceTimestamp(1_000),
+    confidence=0.9,
+    override_status=belief_update.OverrideStatus.not_requested,
+)
+
+tree_result = belief_update.update_tree(prior, likelihoods, provenance)
+public_transport = tree_result.posterior.probability(
+    belief_update.HypothesisId(2)
+)
+reproduced = belief_update.replay(tree_result)
+```
+
+Bayes is evaluated only over leaves. Internal-node posteriors are sums of their
+descendant leaves. Labels and domain interpretation stay outside the core. See
+[tree update semantics](docs/tree_updates.md) for the complete contract.
 
 ## Behavior
 
@@ -93,18 +138,24 @@ the model output and uses its provenance timestamp as the evaluation time.
 - `UpdateResult` is immutable and contains the inputs, selected provenance,
   configuration, algorithm, intermediate calculations, warnings, and library
   version needed for deterministic replay.
+- `TreeUpdateResult` owns the tree prior, leaf likelihoods, provenance,
+  numerical intermediates, aggregated posterior, algorithm, and library version.
+- Tree priors are never normalized or corrected; callers supply an explicit
+  sum tolerance and invalid topology, counts, probabilities, or evidence fail.
 - Stress testing requires caller-supplied ranges, calls the C++ Bayesian core,
   and remains outside the real-time dependency path.
 - Local sensitivity, model-versus-explicit comparison, threshold analysis, and
   stress testing consume an existing immutable result.
 
-The C++ core implements exact binary and log-odds updates. Python calls those
-production C++ functions through pybind11. The pure-Python implementation under
-`tests/python/` is a verification oracle only and is not packaged.
+The C++ core implements exact binary, log-odds, and categorical tree updates.
+Python calls those production C++ functions through pybind11. The pure-Python
+binary implementation under `tests/python/` is a verification oracle only and
+is not packaged.
 
-See [architecture](docs/architecture.md), [analysis conventions](docs/analysis.md),
-and [misleading-posterior behavior](docs/misleading_posteriors.md) for the
-detailed contracts.
+See [architecture](docs/architecture.md), [tree update semantics](docs/tree_updates.md),
+[analysis conventions](docs/analysis.md), and
+[misleading-posterior behavior](docs/misleading_posteriors.md) for the detailed
+contracts.
 
 ## Build and test
 
@@ -131,6 +182,14 @@ Build the Python wheel:
 ```sh
 python3 -m pip wheel . --no-deps
 ```
+
+## Versioning
+
+BBUS uses semantic versions in `MAJOR.MINOR.PATCH` form. Package metadata and
+the runtime API report `0.1.0`; corresponding Git releases may use a `v0.1.0`
+tag. While the project is pre-1.0, meaningful additive capabilities increment
+`MINOR`, fixes increment `PATCH`, and incompatible changes must be called out
+explicitly. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Demo and benchmark
 
