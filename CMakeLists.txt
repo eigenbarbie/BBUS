@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 project(
   belief_update
-  VERSION 0.0.3
+  VERSION 0.1.0
   DESCRIPTION "Deterministic Bayesian belief updates"
   LANGUAGES CXX
 )

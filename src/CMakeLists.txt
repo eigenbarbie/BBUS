@@ -35,6 +35,23 @@ set_target_properties(
 target_link_libraries(belief_update_core PUBLIC belief_update::types)
 belief_update_apply_project_options(belief_update_core)
 
+add_library(
+  belief_update_tree
+  STATIC
+    tree/types.cpp
+    tree/update.cpp
+    tree/replay.cpp
+)
+add_library(belief_update::tree ALIAS belief_update_tree)
+set_target_properties(
+  belief_update_tree
+  PROPERTIES
+    EXPORT_NAME tree
+    POSITION_INDEPENDENT_CODE ON
+)
+target_link_libraries(belief_update_tree PUBLIC belief_update::types)
+belief_update_apply_project_options(belief_update_tree)
+
 add_library(belief_update_validation STATIC validation/validator.cpp)
 add_library(belief_update::validation ALIAS belief_update_validation)
 set_target_properties(
@@ -45,6 +62,7 @@ set_target_properties(
 )
 target_link_libraries(belief_update_validation PUBLIC belief_update::types)
 belief_update_apply_project_options(belief_update_validation)
+target_link_libraries(belief_update_tree PUBLIC belief_update::validation)
 
 add_library(belief_update_resolver STATIC resolver/input_resolver.cpp)
 add_library(belief_update::resolver ALIAS belief_update_resolver)
@@ -171,6 +189,7 @@ install(
     belief_update_types
     belief_update_model
     belief_update_core
+    belief_update_tree
     belief_update_validation
     belief_update_resolver
     belief_update_update

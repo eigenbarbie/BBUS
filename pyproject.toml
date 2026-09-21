@@ -7,7 +7,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "belief-update"
-version = "0.0.3"
+version = "0.1.0"
 description = "Deterministic Bayesian belief updates"
 readme = "README.md"
 requires-python = ">=3.9"

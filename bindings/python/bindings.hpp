@@ -13,6 +13,7 @@ void bind_resolver(pybind11::module_& module);
 void bind_values(pybind11::module_& module);
 void bind_result(pybind11::module_& module);
 void bind_stress(pybind11::module_& module);
+void bind_tree(pybind11::module_& module);
 void bind_update(pybind11::module_& module);
 void bind_validation(pybind11::module_& module);
 

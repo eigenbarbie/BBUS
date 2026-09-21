@@ -1,8 +1,10 @@
 implementation,median_ns_per_update,iterations,posterior,scope
-python_unchecked_formula,156.1167,10000,0.727272727272183,unchecked Python arithmetic latency floor
-bbus_python_core_binding,532.1875,10000,0.727272727272183,Python-to-C++ mathematical core binding
-bbus_python_audited_update,739.7375,10000,0.727272727272183,Python-to-C++ complete validate-resolve-update-result path
-sklearn_bernoulli_nb_scalar,131163.6667,10000,0.727272727272183,scalar BernoulliNB.predict_proba on equivalent evidence
-cpp_unchecked_formula,0.878125,200000,0.7272727272878545,unchecked arithmetic latency floor
-bbus_cpp_core,5.8175,200000,0.7272727272878545,validated C++ mathematical core
-bbus_cpp_audited_update,33.829165,200000,0.7272727272878545,complete C++ validate-resolve-update-result path
+python_unchecked_formula,154.6167,10000,0.727272727272183,unchecked Python arithmetic latency floor
+bbus_python_core_binding,528.65,10000,0.727272727272183,Python-to-C++ mathematical core binding
+bbus_python_audited_update,725.2208,10000,0.727272727272183,Python-to-C++ complete validate-resolve-update-result path
+bbus_python_tree_update,1312.4916,10000,0.8484848484858537,Python-to-C++ complete three-leaf categorical tree update
+sklearn_bernoulli_nb_scalar,131466.4417,10000,0.727272727272183,scalar BernoulliNB.predict_proba on equivalent evidence
+cpp_unchecked_formula,0.89854,200000,0.7272727272878545,unchecked arithmetic latency floor
+bbus_cpp_core,5.86354,200000,0.7272727272878545,validated C++ mathematical core
+bbus_cpp_audited_update,33.86125,200000,0.7272727272878545,complete C++ validate-resolve-update-result path
+bbus_cpp_tree_update,288.59958,200000,0.8484848484890893,complete three-leaf categorical tree update

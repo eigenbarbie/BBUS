@@ -232,6 +232,16 @@ belief_update_apply_project_options(belief_update_replay_test)
 add_test(NAME cpp.replay COMMAND belief_update_replay_test)
 set_tests_properties(cpp.replay PROPERTIES LABELS "unit;replay")
 
+add_executable(belief_update_tree_test cpp/tree_update_test.cpp)
+target_link_libraries(belief_update_tree_test PRIVATE belief_update::tree)
+target_include_directories(
+  belief_update_tree_test
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/cpp"
+)
+belief_update_apply_project_options(belief_update_tree_test)
+add_test(NAME cpp.tree COMMAND belief_update_tree_test)
+set_tests_properties(cpp.tree PROPERTIES LABELS "unit;tree;replay")
+
 if(BELIEF_UPDATE_BUILD_PYTHON)
   add_test(
     NAME python.import

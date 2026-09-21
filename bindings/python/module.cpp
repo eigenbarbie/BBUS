@@ -19,5 +19,6 @@ PYBIND11_MODULE(_belief_update, module) {
   belief_update::python::bind_update(module);
   belief_update::python::bind_analysis(module);
   belief_update::python::bind_stress(module);
+  belief_update::python::bind_tree(module);
   belief_update::python::bind_replay(module);
 }

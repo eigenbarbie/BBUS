@@ -5,6 +5,7 @@ Python:
 
 - typed provenance and explicit-over-model input precedence;
 - exact binary and log-odds updates;
+- exact categorical updates over a nested hypothesis tree;
 - immutable results and deterministic replay;
 - local sensitivity and model-versus-explicit comparison;
 - threshold analysis; and
@@ -43,13 +44,15 @@ and `1 ms` (one millisecond) is `1,000 us`. Lower is better.
 | Implementation | Median time for one update |
 |---|---:|
 | BBUS C++ core | 5.8 ns |
-| BBUS C++ audited update | 33.8 ns |
-| BBUS Python core binding | 532.2 ns |
-| BBUS Python audited update | 739.7 ns |
-| scikit-learn `BernoulliNB.predict_proba` | 131.16 us |
+| BBUS C++ audited update | 33.9 ns |
+| BBUS C++ three-leaf tree update | 288.6 ns |
+| BBUS Python core binding | 528.6 ns |
+| BBUS Python audited update | 725.2 ns |
+| BBUS Python three-leaf tree update | 1.31 us |
+| scikit-learn `BernoulliNB.predict_proba` | 131.47 us |
 
 These example measurements were produced on arm64 macOS using an Apple Clang
-17 Release build, Python 3.14.1, BBUS 0.0.3, and scikit-learn 1.9.1. See the
+17 Release build, Python 3.14.1, BBUS 0.1.0, and scikit-learn 1.9.1. See the
 [full generated report](results/benchmark_results.md) for the unchecked latency
 floors, iteration counts, environment details, and comparison limitations.
 

@@ -52,6 +52,44 @@ def make_input(
     )
 
 
+def make_tree_provenance() -> belief_update.Provenance:
+    return belief_update.Provenance(
+        source_type=belief_update.SourceType.model,
+        source_id=belief_update.SourceId(value="transport-model"),
+        version=belief_update.SourceVersion(value="demo-v1"),
+        timestamp=belief_update.ProvenanceTimestamp(unix_nanoseconds=1_000),
+        confidence=0.95,
+        override_status=belief_update.OverrideStatus.not_requested,
+    )
+
+
+def make_tree_inputs() -> tuple[
+    belief_update.TreeBeliefState,
+    belief_update.TreeLikelihoodValues,
+    belief_update.Provenance,
+]:
+    tree = belief_update.HypothesisTree(
+        parents=[
+            None,
+            belief_update.HypothesisId(0),
+            belief_update.HypothesisId(0),
+            belief_update.HypothesisId(2),
+            belief_update.HypothesisId(2),
+        ]
+    )
+    return (
+        belief_update.TreeBeliefState(
+            tree=tree,
+            leaf_probabilities=[0.5, 0.2, 0.3],
+            probability_sum_tolerance=1e-12,
+        ),
+        belief_update.TreeLikelihoodValues(
+            evidence_given_leaves=[0.1, 0.8, 0.4]
+        ),
+        make_tree_provenance(),
+    )
+
+
 def showcase() -> None:
     explicit_input = make_input(
         0.8,
@@ -97,6 +135,13 @@ def showcase() -> None:
         prior=belief_update.BeliefState(probability=0.4),
         log_likelihood_ratio=math.log(0.8 / 0.2),
     )
+    tree_prior, tree_likelihoods, tree_provenance = make_tree_inputs()
+    tree_result = belief_update.update_tree(
+        prior=tree_prior,
+        likelihoods=tree_likelihoods,
+        provenance=tree_provenance,
+    )
+    replayed_tree = belief_update.replay(recorded=tree_result)
 
     print("BBUS Python capability demo")
     print(f"  prior:                    {calculation.prior:.9f}")
@@ -120,6 +165,26 @@ def showcase() -> None:
         f"{stress.maximum_posterior_scenario.posterior:.9f}"
     )
     print(f"  original unchanged:       {result.posterior == calculation.posterior}")
+    print(
+        "  tree car posterior:       "
+        f"{tree_result.posterior.probability(belief_update.HypothesisId(1)):.9f}"
+    )
+    print(
+        "  tree public transit:      "
+        f"{tree_result.posterior.probability(belief_update.HypothesisId(2)):.9f}"
+    )
+    print(
+        "  tree bus posterior:       "
+        f"{tree_result.posterior.probability(belief_update.HypothesisId(3)):.9f}"
+    )
+    print(
+        "  tree train posterior:     "
+        f"{tree_result.posterior.probability(belief_update.HypothesisId(4)):.9f}"
+    )
+    print(
+        "  tree replay identical:    "
+        f"{replayed_tree.posterior.node_probabilities == tree_result.posterior.node_probabilities}"
+    )
     print()
 
 
@@ -199,6 +264,7 @@ def run_cpp_demo(executable: Path, iterations: int) -> list[Benchmark]:
         "cpp_unchecked_formula": "unchecked arithmetic latency floor",
         "bbus_cpp_core": "validated C++ mathematical core",
         "bbus_cpp_audited_update": "complete C++ validate-resolve-update-result path",
+        "bbus_cpp_tree_update": "complete three-leaf categorical tree update",
     }
     for line in completed.stdout.splitlines():
         if not line.startswith("BENCHMARK,"):
@@ -213,7 +279,7 @@ def run_cpp_demo(executable: Path, iterations: int) -> list[Benchmark]:
                 scopes[name],
             )
         )
-    if len(results) != 3:
+    if len(results) != 4:
         raise RuntimeError("C++ demo did not emit all benchmark records")
     return results
 
@@ -293,15 +359,17 @@ def write_svg(results: list[Benchmark], destination: Path) -> None:
     colors = {
         "bbus_cpp_core": "#2f6fed",
         "bbus_cpp_audited_update": "#1854b4",
+        "bbus_cpp_tree_update": "#7d55c7",
         "bbus_python_core_binding": "#23a98c",
         "bbus_python_audited_update": "#147a65",
+        "bbus_python_tree_update": "#6540a6",
         "sklearn_bernoulli_nb_scalar": "#e28a24",
     }
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#fbfaf7"/>',
         '<text x="40" y="42" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#172033">BBUS demo latency comparison</text>',
-        '<text x="40" y="70" font-family="system-ui, sans-serif" font-size="14" fill="#536078">Median ns per single update - lower is better - logarithmic scale</text>',
+        '<text x="40" y="70" font-family="system-ui, sans-serif" font-size="14" fill="#536078">Median time per single update - lower is better - logarithmic scale</text>',
     ]
     for power in range(minimum_power, maximum_power + 1):
         value = 10.0**power
@@ -359,6 +427,7 @@ def main() -> int:
         evidence_given_hypothesis=0.8,
         evidence_given_not_hypothesis=0.2,
     )
+    tree_prior, tree_likelihoods, tree_provenance = make_tree_inputs()
     results = [
         time_operation(
             "python_unchecked_formula",
@@ -381,6 +450,16 @@ def main() -> int:
             ).posterior,
             arguments.iterations,
             "Python-to-C++ complete validate-resolve-update-result path",
+        ),
+        time_operation(
+            "bbus_python_tree_update",
+            lambda: belief_update.update_tree(
+                prior=tree_prior,
+                likelihoods=tree_likelihoods,
+                provenance=tree_provenance,
+            ).posterior.probability(belief_update.HypothesisId(2)),
+            arguments.iterations,
+            "Python-to-C++ complete three-leaf categorical tree update",
         ),
     ]
 
