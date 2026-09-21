@@ -1,0 +1,8 @@
+implementation,median_ns_per_update,iterations,posterior,scope
+python_unchecked_formula,156.1167,10000,0.727272727272183,unchecked Python arithmetic latency floor
+bbus_python_core_binding,532.1875,10000,0.727272727272183,Python-to-C++ mathematical core binding
+bbus_python_audited_update,739.7375,10000,0.727272727272183,Python-to-C++ complete validate-resolve-update-result path
+sklearn_bernoulli_nb_scalar,131163.6667,10000,0.727272727272183,scalar BernoulliNB.predict_proba on equivalent evidence
+cpp_unchecked_formula,0.878125,200000,0.7272727272878545,unchecked arithmetic latency floor
+bbus_cpp_core,5.8175,200000,0.7272727272878545,validated C++ mathematical core
+bbus_cpp_audited_update,33.829165,200000,0.7272727272878545,complete C++ validate-resolve-update-result path

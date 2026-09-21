@@ -10,6 +10,7 @@ project(
 include(CTest)
 
 option(BELIEF_UPDATE_BUILD_PYTHON "Build the Python extension" ON)
+option(BELIEF_UPDATE_BUILD_DEMOS "Build demonstration programs" OFF)
 option(BELIEF_UPDATE_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(BELIEF_UPDATE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
@@ -20,6 +21,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(ProjectOptions)
 
 add_subdirectory(src)
+
+if(BELIEF_UPDATE_BUILD_DEMOS)
+  add_subdirectory(demo)
+endif()
 
 if(BELIEF_UPDATE_BUILD_PYTHON)
   find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module)

@@ -131,3 +131,16 @@ Build the Python wheel:
 ```sh
 python3 -m pip wheel . --no-deps
 ```
+
+## Demo and benchmark
+
+The [demo guide](demo/README.md) contains complete C++ and Python examples,
+reproducible benchmark commands, and an optional scikit-learn comparison. The
+benchmark generates CSV, Markdown, and SVG results without adding plotting or
+machine-learning dependencies to the library itself.
+
+![Demo benchmark comparing BBUS C++, BBUS Python, and scikit-learn](demo/results/benchmark_results.svg)
+
+The plot uses a logarithmic scale and labels results in nanoseconds (`ns`),
+microseconds (`us`), or milliseconds (`ms`). See the demo guide for the exact
+commands, environment, raw results, and scope of each comparison.
